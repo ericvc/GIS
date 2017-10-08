@@ -1,7 +1,6 @@
 ################################################################################
 ###               Script for visualizing ALL animal locations                ###
 ################################################################################
-library(rethinking)
 library(chron)
 library(circular)
 library(sp)
@@ -16,7 +15,8 @@ setwd('~/Leopard Analysis/')
 #Load movement locations...
 load('Workspace/Analysis.R') #Loads data in an object called 'leopards'
 load('Workspace/Analysis2.R') #Loads data in an object called 'leopards2'
-load('~/Monkeys/Monkey Workspace/Monkey.data.Rdata') #Loads data in an object called 'monkey.move'
+#load('/Volumes/Lockbox/Monkeys/Monkey Workspace/') #Loads data in an object called 'monkey.move'
+load('/Volumes/Lockbox/Monkeys/Monkey Workspace/Monkey.data.Rdata') #Loads data in an object called 'monkey.move'
 #
 
 #---------------leopard data---------------
@@ -130,32 +130,33 @@ data$col.vec[data$Taxon=="Panthera"] <- cols[3]
 
 #-Alternate ID labels
 labels = rep("",nrow(data))
-labels[data$ID=="Luna"] = "LMPY"
-labels[data$ID=="Msafiri"] = "SHRT"
-labels[data$ID=="Pimento"] = "HPPO"
-labels[data$ID=="Golden.Gate"] = "BRDG"
-labels[data$ID=="Kasuku"] = "FIGG"
-labels[data$ID=="Yakobo"] = "CLFF"
-labels[data$ID=="Meleaburu"] = "KUDU"
-labels[data$ID=="Konda"] = "KNDA"
-labels[data$ID=="Shujaa"] = "MEGG"
-labels[data$ID=="Haraka"] = "HRKA"
-labels[data$ID=="Chumvi"] = "CHMV"
-labels[data$ID=="Colin.Tait"] = "CNTR"
-labels[data$ID=="Tatu"] = "TATU"
-labels[data$ID=="Ewaso"] = "EWSO"
-labels[data$ID=="Limofu"] = "LMFU"
-labels[data$ID=="Mzee"] = "MZEE"
+labels[data$ID=="Luna"] = "LI"
+labels[data$ID=="Msafiri"] = "ST"
+labels[data$ID=="Pimento"] = "HP"
+labels[data$ID=="Golden.Gate"] = "BR"
+labels[data$ID=="Kasuku"] = "FG"
+labels[data$ID=="Yakobo"] = "AI"
+labels[data$ID=="Meleaburu"] = "KU"
+labels[data$ID=="Konda"] = "KO"
+labels[data$ID=="Shujaa"] = "MG"
+labels[data$ID=="Haraka"] = "HA"
+labels[data$ID=="Chumvi"] = "CH"
+labels[data$ID=="Colin.Tait"] = "CT"
+labels[data$ID=="Tatu"] = "TA"
+labels[data$ID=="Ewaso"] = "EW"
+labels[data$ID=="Limofu"] = "LF"
+labels[data$ID=="Mzee"] = "MZ"
 data$labels = labels
-lvls = c("CLFF","LMPY","MEGG","SHRT", "BRDG","CNTR","FIGG","HPPO","KUDU","CHMV","EWSO","HRKA","KNDA","LMFU","MZEE","TATU")
+lvls = unique(labels)
 lab.cols = c(rep(cols[2],4),rep(cols[1],5), rep(cols[3],6))
 
 #-Habiat use data.
 #Step 1) Load data into workspace
 #Step 2) Match with 'data'
-leop_files = list.files("~/Leopard Analysis/", pattern = "habitat_UD50", full.names = TRUE, recursive = TRUE)[-c(1:2)]
-monk_files = list.files("~/Monkeys/Temporal Habitat/", pattern = "habitat_UD50.csv", full.names = TRUE, recursive = TRUE)
-files = c(monk_files,leop_files)
+leop_files = list.files("Workspace/", pattern = "stepUD_data", full.names = TRUE, recursive = TRUE)
+#monk_files = list.files("~/Monkeys/Temporal Habitat/", pattern = "habitat_UD50.csv", full.names = TRUE, recursive = TRUE)
+#files = c(monk_files,leop_files)
+files = leop_files
 varNames = c("Open", "Grass", "Cover", "River", "Roads", 
              "Human", "Glade", "GladeEdge", "Escarpment", "Lugga", "Water","Koppe")
 vars = c("Julian","Name","TimeOfDay",varNames)
@@ -171,7 +172,7 @@ for(f in 1:length(files)){
     temptime = as.POSIXlt(temp$time, tz = "Africa/Nairobi")
     temp$Julian = as.numeric(julian(temptime, origin = as.POSIXct("2014-01-01", tz = "Africa/Nairobi")))
   } 
-  else{ 
+  if(any(names(temp)=="Julian")==TRUE){ 
     temptime = as.POSIXlt(temp$local.time, tz = "Africa/Nairobi")
     temp$Julian = as.numeric(julian(temptime, origin = as.POSIXct("2014-01-01", tz = "Africa/Nairobi")))
   }
