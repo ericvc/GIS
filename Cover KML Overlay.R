@@ -5,6 +5,7 @@ library(maptools)
 library(RColorBrewer)
 library(rgdal)
 library(scales)
+library(rasterVis)
 
 setwd("~/Leopard Analysis")
 r = raster("~/Leopard Analysis/Environmental Variables/Habitat Categorical/Habitat_Classification_Cover_FULL.tif")
@@ -14,9 +15,14 @@ colvec = colorRampPalette(rev(brewer.pal(8, "Set2")))(length(unique(getValues(r)
 colvec2 = c("sandybrown", "lightgoldenrod", "green4", "darkorchid",
             "black", "red","darkslategray1", "darkslategray4",
             "maroon1", "orange2", "slateblue")
-colvec3 = c(alpha("sandybrown",0.8), alpha("#EFCC6B",0.7), alpha("green4",0.8), "#66C2A5", "black", 
+colvec3 = c("sandybrown", "#EFCC6B", "green4", "#66C2A5", "black", 
             "red", "#0CAB76", "#176E43","#CF948B", "#CE9C76", "#66C2A5")
 roads = readShapeLines("Workspace/Shapefiles/Roads/roads.shp")
+escar = readShapePoly("Workspace/Shapefiles/Escarpment/Escarpment_Draft.shp")
+elev = raster("Environmental Variables/Elevation_(derived from  SRTM).tif")
+proj4string(escar) <- "+proj=longlat"
+escar2 = spTransform(escar, CRS(proj4string(r)))
+
 #luggas = readShapeLines("Workspace/Shapefiles/Lugga/lugga.shp")
 par(mfrow=c(1,1))
 # plot(r, col=colvec)
@@ -30,11 +36,14 @@ par(mfrow=c(1,1))
 # ymin        : 26249.53 
 # ymax        : 45037.86 
 ex = extent(c(xmin=259542.1, xmax=273272, ymin=26249.53, ymax=45037.86))
-png("~/Desktop/map.png", width = 8.5, height=11, res=144, units="in")
+png("~/Desktop/map2.png", width = 8.5, height=11, res=144, units="in")
 plot(crop(r,ex), col=colvec3, axes=FALSE, legend=FALSE, box=FALSE)
+plot(escar2, add=TRUE, col="#CF948B", lwd=0.01)
+plot(roads, add=TRUE, col="black")
+
   #-Map scale
   len2 = 5000/2 #Prep--------------------------------------------------------
-  xcen = 262500
+  xcen = 263200
   ycen = 27387
   fontSize = 1.5
   xx <- c(c(xcen-len2,(xcen-len2)+1000), c((xcen-len2)+1000,xcen-len2) ) #for 0 - 1 km
@@ -43,22 +52,22 @@ plot(crop(r,ex), col=colvec3, axes=FALSE, legend=FALSE, box=FALSE)
   yy <- c(ycen-75, ycen-75, ycen+75, ycen+75)#------------------
   polygon(xx, yy, col = "black", border = "white", lwd=1.5) #Main bar (1/3)
   polygon(xx3, yy, col = "black", border = "white", lwd=1.5) #Main bar (3/3)
-  polygon(xx2, yy, col = "white", border = "black", lwd=1.5) #Main bar (2/3)
+  polygon(xx2, yy, col = "white", border = "white", lwd=1.5) #Main bar (2/3)
   #segments((xcen-len2)+1000, ycen-10, xcen, ycen+10, lwd=2.4, col="white") #off-center tick
-  text((xcen-len2)+1000, ycen-600, "1", cex=fontSize, col="white", font=2) #off-center label
-  text(xcen, ycen-600, "2.5", cex=fontSize, col="white", font=2) #Center label
+  text((xcen-len2)+1000, ycen-300, "1", cex=fontSize-0.4, col="black", font=1) #off-center label
+  text(xcen, ycen-300, "2.5", cex=fontSize-0.4, col="black", font=1) #Center label
   segments(xcen-len2, ycen-100, xcen-len2, ycen+300, lwd=1.5, col="white") #Left tick
-  text(xcen-len2, ycen-600, "0", cex=fontSize, col="white", font=2) #Left label
+  text(xcen-len2, ycen-300, "0", cex=fontSize-0.4, col="black", font=1) #Left label
   segments(xcen+len2, ycen-100, xcen+len2, ycen+300, lwd=1.5, col="white") #Right tick
-  text(xcen+len2, ycen-600, "5", cex=fontSize, col="white", font=2) #Right label
-  text(xcen, ycen-1200, "kilometers", cex=fontSize-0.3, col="white", font=2) #Units label
+  text(xcen+len2, ycen-300, "5", cex=fontSize-0.4, col="black", font=1) #Right label
+  text(xcen, ycen-600, "kilometers", cex=fontSize-0.5, col="black", font=1) #Units label
+  # text(xcen, ycen-800, "kilometers", cex=fontSize-0.5, col="white", font=2) #Units label
 
   #-Legend
   #plot.new()
   #-vector data
-  plot(roads, add=TRUE, col="black")
  # plot(luggas, add=TRUE, col=colvec3[which(varNames=="Lugga")])
-  legend(x=269800 ,y=32000, legend = varNames[-length(varNames)], cex=fontSize-0.3, 
+  legend(x=270100 ,y=ycen+4200, legend = varNames[-length(varNames)], cex=fontSize-0.5, 
          pt.cex = fontSize+0.3,
          pch=15, col = colvec3, bg = "gray90")
 dev.off()
@@ -96,6 +105,10 @@ library(plotKML)
 
 r2 = projectRaster(r, crs = CRS("+proj=longlat"), method = "ngb")
 KML(r2, "~/Desktop/habmap", col=colvec2, overwrite=TRUE, maxpixels=ncell(r2), blur=10)
+
+r3 = r
+r3 = r - 1
+plot3D(crop(elev,ex), drape=crop(r,ex), col=colvec3, maxpixels=ncell(r), zfac=0.2)
 
 
 #PWC
