@@ -35,17 +35,19 @@ par(mfrow=c(1,1))
 # xmax        : 273272 
 # ymin        : 26249.53 
 # ymax        : 45037.86 
-ex = extent(c(xmin=259542.1, xmax=273272, ymin=26249.53, ymax=45037.86))
-png("~/Desktop/map2.png", width = 8.5, height=11, res=144, units="in")
-plot(crop(r,ex), col=colvec3, axes=FALSE, legend=FALSE, box=FALSE)
-plot(escar2, add=TRUE, col="#CF948B", lwd=0.01)
-plot(roads, add=TRUE, col="black")
+ex = extent(c(xmin=258842.1, xmax=272972, ymin=26249.53, ymax=43037.86))
 
+par(mar=c(1,1,1,1)-0.5)
+png("Figures/habmap+high+res.png", width = 8.5, height=11, units="in", res=256)
+image(crop(r,ex), col=sapply(colvec3,function(x) alpha(x,0.8)), axes=FALSE, xlab="", ylab="", asp=1)
+plot(crop(escar2,ex), add=TRUE, col="#CF948B", lwd=0.0001)
+plot(crop(roads,ex), add=TRUE, col="black", lwd=2)
   #-Map scale
   len2 = 5000/2 #Prep--------------------------------------------------------
-  xcen = 263200
-  ycen = 27387
-  fontSize = 1.5
+  xcen = 262100
+  ycen = 27187
+  fontSize = 1.6
+  fontFamily = "serif"
   xx <- c(c(xcen-len2,(xcen-len2)+1000), c((xcen-len2)+1000,xcen-len2) ) #for 0 - 1 km
   xx2 <- c(c((xcen-len2)+1000,xcen), c(xcen,(xcen-len2)+1000) )
   xx3 <- c(c(xcen+len2,xcen), c(xcen,xcen+len2))
@@ -54,21 +56,22 @@ plot(roads, add=TRUE, col="black")
   polygon(xx3, yy, col = "black", border = "white", lwd=1.5) #Main bar (3/3)
   polygon(xx2, yy, col = "white", border = "white", lwd=1.5) #Main bar (2/3)
   #segments((xcen-len2)+1000, ycen-10, xcen, ycen+10, lwd=2.4, col="white") #off-center tick
-  text((xcen-len2)+1000, ycen-300, "1", cex=fontSize-0.4, col="black", font=1) #off-center label
-  text(xcen, ycen-300, "2.5", cex=fontSize-0.4, col="black", font=1) #Center label
-  segments(xcen-len2, ycen-100, xcen-len2, ycen+300, lwd=1.5, col="white") #Left tick
-  text(xcen-len2, ycen-300, "0", cex=fontSize-0.4, col="black", font=1) #Left label
-  segments(xcen+len2, ycen-100, xcen+len2, ycen+300, lwd=1.5, col="white") #Right tick
-  text(xcen+len2, ycen-300, "5", cex=fontSize-0.4, col="black", font=1) #Right label
-  text(xcen, ycen-600, "kilometers", cex=fontSize-0.5, col="black", font=1) #Units label
+  text((xcen-len2)+1000, ycen-300, "1", cex=fontSize-0.4, col="black", font=1, family=fontFamily) #off-center label
+  text(xcen, ycen-300, "2.5", cex=fontSize-0.4, col="black", font=1, family=fontFamily) #Center label
+  segments(xcen-len2, ycen-100, xcen-len2, ycen+300, lwd=1.5, col="white", family=fontFamily) #Left tick
+  text(xcen-len2, ycen-300, "0", cex=fontSize-0.4, col="black", font=1, family=fontFamily) #Left label
+  segments(xcen+len2, ycen-100, xcen+len2, ycen+300, lwd=1.5, col="white", family=fontFamily) #Right tick
+  text(xcen+len2, ycen-300, "5", cex=fontSize-0.4, col="black", font=1, family=fontFamily) #Right label
+  text(xcen, ycen-600, "kilometers", cex=fontSize-0.2, col="black", font=1, family=fontFamily) #Units label
   # text(xcen, ycen-800, "kilometers", cex=fontSize-0.5, col="white", font=2) #Units label
 
   #-Legend
   #plot.new()
   #-vector data
  # plot(luggas, add=TRUE, col=colvec3[which(varNames=="Lugga")])
+  par(family=fontFamily)
   legend(x=270100 ,y=ycen+4200, legend = varNames[-length(varNames)], cex=fontSize-0.5, 
-         pt.cex = fontSize+0.3,
+         pt.cex = fontSize+0.3, ncol=1, x.intersp = 0.65,
          pch=15, col = colvec3, bg = "gray90")
 dev.off()
   
@@ -153,4 +156,3 @@ library(plotKML)
 
 r2 = projectRaster(r, crs = CRS("+proj=longlat"), method = "ngb")
 KML(r2, "~/Desktop/map.kml", col=rev(topo.colors(100)), overwrite=TRUE, maxpixels=ncell(r2), blur=20)
-
