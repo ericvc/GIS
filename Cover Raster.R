@@ -253,14 +253,14 @@ for(layer in 1:nlayers(cover7)){
 }
 
 
-f = list.files("Environmental Variables/Habitat Categorical/", full.names=TRUE)
-cover7 = stack(f[6:10])
-# # 1 = No data, 2 = Bare Ground, 3 = Grass, 4 = Cover, 5 = River, 6 = Roads, 7 = Human, 8 = Glade,
-# #9 = Glade Edge, 10 = Escarpment, 11 = Lugga, 12 = Water
-col.vec = c("white", "sandybrown", "lightgoldenrod", "green4", "darkorchid",
-            "black", "red","darkslategray1", "darkslategray4",
-            "maroon1", "orange2", "slateblue")
-
+# f = list.files("Environmental Variables/Habitat Categorical/", full.names=TRUE)
+# cover7 = stack(f[6:10])
+# # # 1 = No data, 2 = Bare Ground, 3 = Grass, 4 = Cover, 5 = River, 6 = Roads, 7 = Human, 8 = Glade,
+# # #9 = Glade Edge, 10 = Escarpment, 11 = Lugga, 12 = Water
+# col.vec = c("white", "sandybrown", "lightgoldenrod", "green4", "darkorchid",
+#             "black", "red","darkslategray1", "darkslategray4",
+#             "maroon1", "orange2", "slateblue")
+cover7 = raster("Environmental Variables/Habitat Categorical/Habitat Classification_Cover30.tif")
 #Expand coverage of the habitat map to include outlying areas. I will do this using
 #Landsat data and machine learning algorithms.
 lsatFiles = list.files("/Volumes/Shoebox/GIS/Landsat_LC81680602014178LGN00/",
@@ -272,7 +272,7 @@ lsatData.repro = projectRaster(lsatData.cropped, cover7, method="ngb")
 
 #see https://landsat.usgs.gov/qualityband for QA band code definitions.
 useCell = getValues(lsatData.repro[[5]])
-cellVals = getValues(cover7[[4]])
+cellVals = getValues(cover7)
 set.seed(138)
 trainCell = sample(which(cellVals<5 & cellVals>1 & useCell==20480), 3e3, replace=FALSE)
 trainData = data.frame(extract(lsatData.repro, trainCell))[,-5]
@@ -282,9 +282,15 @@ trainData$cover = factor(cellVals[trainCell])
 svmTune = tune(svm, cover ~ B2 + B3 + B4 + B5,
                 data=trainData,
                 #tunecontrol=tune.control(sampling="fix"),
-                ranges = list(gamma=seq(1.3,1.4,0.01), cost=seq(5,6,by=0.1))
-                )
+               ranges = list(gamma = 2^seq(0.5, 3, by = 0.5), cost = 2^seq(3, 6, by = 1))
+               )
+svmTune = tune(svm, cover ~ B2 + B3 + B4 + B5,
+                data=trainData,
+                #tunecontrol=tune.control(sampling="fix"),
+                ranges = list(gamma = seq(0, 1, by = 0.1), cost = seq(12, 18, by = 0.05))
+               )
 #save(svmTune, file="Workspace/svm_habitat_model_tuned.Rdata") #save to hard disk
+load("Workspace/svm_habitat_model_tuned.Rdata")
 plot(svmTune) #examine fit
 print(svmTune)
 tunedModel = svmTune$best.model #get the best fit model from tune object
@@ -293,22 +299,34 @@ names(fullData) = c("B2","B3","B4","B5","QA")
 modelPreds = predict(tunedModel, fullData[,-5])
 cells = as.numeric(names(modelPreds))
 vals = as.numeric(modelPreds)
-r = cover7[[4]]
+r = cover7
 r[] = NA; names(r) = "Data"
 r[cells] = vals+1
 #r[trainCell] = 10
 plot(r)
 
-cover8 = cover7[[4]]
+cover8 = cover7
 cover8[which(cover8[]==1)] = r[which(cover8[]==1)]
 plot(cover8, col=col.vec[-1])
 
 #write product to hard disk.
 writeRaster(cover8,
             filename = paste("Environmental Variables/Habitat Categorical/",
-                             "Habitat_Classification_Cover_FULL",".tif",sep=""),
+                             "Habitat_Classification_Cover_FULL_v2",".tif",sep=""),
             overwrite=TRUE
 )
 
 plot(cover8)
 
+
+#Model performance (confusion matrix)
+#install.packages("caret")
+library(caret)
+trainCell = sample(which(cellVals<5 & cellVals>1 & useCell==20480), 5e3, replace=FALSE)
+trainData3 = data.frame(extract(lsatData.repro, trainCell))[,-5]
+names(trainData3) = c("B2","B3","B4","B5")
+trainData3$cover = factor(cellVals[trainCell])
+preds = predict(tunedModel, trainData3[,-5])
+cM = confusionMatrix(preds, reference = trainData3[,5])
+cM
+cMTable = prop.table(cM$table,1)

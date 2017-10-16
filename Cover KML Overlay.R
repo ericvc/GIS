@@ -8,7 +8,7 @@ library(scales)
 library(rasterVis)
 
 setwd("~/Leopard Analysis")
-r = raster("~/Leopard Analysis/Environmental Variables/Habitat Categorical/Habitat_Classification_Cover_FULL.tif")
+r = raster("~/Leopard Analysis/Environmental Variables/Habitat Categorical/Habitat_Classification_Cover_FULL_v2.tif")
 varNames = c("Open", "Grass", "Cover", "River", "Roads", 
              "Human", "Glade", "Glade Edge", "Escarpment", "Lugga", "Water")
 colvec = colorRampPalette(rev(brewer.pal(8, "Set2")))(length(unique(getValues(r))))
@@ -35,9 +35,9 @@ par(mfrow=c(1,1))
 # xmax        : 273272 
 # ymin        : 26249.53 
 # ymax        : 45037.86 
-ex = extent(c(xmin=258842.1, xmax=272972, ymin=26249.53, ymax=43037.86))
+ex = extent(c(xmin=258842.1, xmax=270072, ymin=26249.53, ymax=43037.86))
 
-par(mar=c(1,1,1,1)-0.5)
+par(mar=c(1,1,1,1)-0.75)
 png("Figures/habmap+high+res.png", width = 8.5, height=11, units="in", res=256)
 image(crop(r,ex), col=sapply(colvec3,function(x) alpha(x,0.8)), axes=FALSE, xlab="", ylab="", asp=1)
 plot(crop(escar2,ex), add=TRUE, col="#CF948B", lwd=0.0001)
@@ -70,7 +70,7 @@ plot(crop(roads,ex), add=TRUE, col="black", lwd=2)
   #-vector data
  # plot(luggas, add=TRUE, col=colvec3[which(varNames=="Lugga")])
   par(family=fontFamily)
-  legend(x=270100 ,y=ycen+4200, legend = varNames[-length(varNames)], cex=fontSize-0.5, 
+  legend(x=267600 ,y=ycen+3800, legend = varNames[-length(varNames)], cex=fontSize-0.5, 
          pt.cex = fontSize+0.3, ncol=1, x.intersp = 0.65,
          pch=15, col = colvec3, bg = "gray90")
 dev.off()
