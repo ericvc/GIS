@@ -3,47 +3,48 @@ library(move)
 library(rgdal)
 library(raster)
 
-weightedHabUse = function (x, range.subset, ts, ras, le, h) 
-{
-  object <- x@DBMvar
-  outMatrix = matrix(NA, length(range.subset), ncol=11)
-  if (length(range.subset) < 2) 
-    stop("\nrange.subset must have length >1\n")
-  if (length(le) == 1) 
-    location.error = rep(c(le), nrow(object))
-  if (length(le) > 1) 
-    location.error = c(le)
-  for (i in range.subset){
-    object@interest <- rep(FALSE, nrow(object))
-    object@interest[i] <- TRUE
-    x.out <- brownian.bridge.dyn(object, raster = ras, time.step = ts,
-                                 location.error = le)
-    outMatrix[i-(min(range.subset)+1),] = tapply(x.out[], list(crop(h, x.out, method="ngb")[]), sum)
-    
-  }
-  outMatrix
-}
-
 leop_id = c("Chumvi","Chumvi","Ewaso","Haraka","Konda","Limofu","Mzee","Tatu")
 #probability distributions
-dbbmm = list.files("Chapter 1/data/", pattern="dbbmm", full.names=TRUE)[-7]
+dbbmm = list.files("Chapter 1/data/", pattern="dbbmm", full.names=TRUE)
 #GIS layer
-hab = raster("Environmental Variables/Habitat Categorical/Habitat_Classification_Cover_FULL_v3_STEP.tif")
-
-use = list()
-for(leopard in 1:length(leop_id)){
-  d = get(load(dbbmm[leopard]))
-  range.subset = which(d@DBMvar@interest==TRUE)
-  use[[leopard]] = weightedHabUse(d, range.subset, ts=0.25, ras=5, h=hab, le=12)
-}
-names(use) = leop_id
+hab = raster("Environmental Variables/Habitat Categorical/Habitat_Classification_Cover_FULL_v3.tif")
 
 START <- Sys.time()
-saveRDS(use, "weightedHabUse_list.rds")
+
+for(leopard in 1:length(leop_id)){
+  
+  d = get(load(dbbmm[leopard]))
+  range.subset = which(d@DBMvar@interest==TRUE)
+  hab2 = projectRaster(hab, crs = CRS(proj4string(d)), method="ngb")
+  object <- d@DBMvar
+  outMatrix = matrix(data=NA,nrow=length(range.subset), ncol=11)
+  for(i in range.subset){
+    if(object@data$step[i+1] < 1500){
+      object@interest <- rep(FALSE, nrow(object))
+      object@interest[i] <- TRUE
+      n = 5e2
+      extent.compare = cbind(extent(object[i])[],extent(object[i+1])[])
+      extent. = c(xmin=min(extent.compare[1,])-n, xmax=max(extent.compare[2,])+n, 
+                  ymin=min(extent.compare[3,])-n, ymax=max(extent.compare[4,])+n)
+      h.crop = crop(hab2, extent.)
+      x.out <- brownian.bridge.dyn(object, raster = h.crop, ext=c(0.5,0),
+                                   bbox = extent.,
+                                   location.error = 9)
+      outMatrix[i-(min(range.subset)+1),] = tapply(x.out[], list(factor(h.crop[],2:12)), sum)
+      print(i)
+    }
+    else{
+      outMatrix[i-(min(range.subset)+1),] = rep(NA,11)
+    }
+    
+  }
+
+  write.csv(outMatrix, file = paste0("Chapter 1/data/weightedHabitatUse_",leop_id[leopard],".csv"))
+  
+}
+ names(use) = leop_id
+
 END <- Sys.time()
 
 #print time to completion
 difftime(END, START, units = "hours")
-
-#calculations are done
-browseURL("https://www.youtube.com/watch?v=-0Ao4t_fe0I")
